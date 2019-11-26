@@ -117,26 +117,32 @@ metrics(x_1, truth = dvote, estimate = pred_dvote) %>%
 
 model_2 <- glm(data = clean, dvote ~ gender + party + state + office, family = "binomial")
 
-  
+x_2 <- clean %>% 
+  mutate(prediction = predict(model_2, type = "response")) %>% 
+  mutate(pred_dvote = as.factor(ifelse(prediction > mean(prediction), "Yes", "No")))
 
 metrics(x_2, truth = dvote, estimate = pred_dvote) %>% 
   gt() %>% 
     tab_header("Model 2 Evaluation on All Data")
 
 # Much better! Repo before class.
+```
 
 
-x_2 <- clean %>% 
-  mutate(prediction = predict(model_2, type = "response")) %>% 
-  mutate(pred_dvote = as.factor(ifelse(prediction > mean(prediction), "Yes", "No")))
-initial_split(iris, prop = 0.6)
-
+```{r}
+set.seed(10)
 sampledata<-clean %>%
-  initial_split( prop=.01)
-sampledata
+  initial_split(prop=.01)
 
 training_tbl <- sampledata %>% training() 
+
+# Can also do training(sampledata)
+
 test_tbl  <- sampledata %>% testing()
+```
+
+
+```{r}
 logistic_reg() %>%
   set_engine("glm") %>%
   fit(data=training_tbl,dvote ~ gender + party + state + office) %>%
@@ -144,7 +150,25 @@ logistic_reg() %>%
   bind_cols(training_tbl) %>%
   metrics(truth=dvote, estimate=.pred_class) %>%
   gt() %>% 
-    tab_header("Model 2 Evaluation on All Data")
+    tab_header("Model 2 Evaluation on Training Data")
+
+# Smaller the data the more accurate our prediction will be
+```
+
+
+```{r}
+# How good does a model (which has been estimated on the sample data) work on 
+# the testing data, that is, on data which was not seen when you were estimating
+# the parameters of the model?
+
+logistic_reg() %>%
+  set_engine("glm") %>%
+  fit(data=training_tbl,dvote ~ gender + party + state + office) %>%
+  predict(new_data=test_tbl) %>%
+  bind_cols(test_tbl) %>%
+  metrics(truth=dvote, estimate=.pred_class) %>%
+  gt() %>% 
+    tab_header("Model 2 Evaluation on Testing Data")
 
 ```
 
